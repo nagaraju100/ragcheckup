@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft for approval |
+| Status | Approved by owner, 2026-11-08 |
 | Author | Nagaraju (owner), drafted with Claude |
 | Date | 2026-11-08 |
 | Working name | `ragcheckup` (see "Decisions made by the drafter") |
@@ -283,7 +283,6 @@ documentation and word lists are not copied verbatim.
 - Corpus embedding model: `sentence-transformers/all-MiniLM-L6-v2`, pinned.
 - Python, distributed on PyPI, installed with `pipx`.
 - Chroma as the first live connector, because it runs locally with no server.
-- License: Apache-2.0 (patent grant, common for infrastructure tools). MIT is the
-  alternative if the owner prefers the simplest license.
+- License: MIT (confirmed by the owner, 2026-11-08).
 - Project lives under the owner's GitHub account `nagaraju100`, with docs pages on
   systemsinprod.com.

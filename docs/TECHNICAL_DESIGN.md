@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft for approval |
+| Status | Approved by owner, 2026-11-08 |
 | Date | 2026-11-08 |
 | Requirements | [PRD.md](PRD.md) |
 
@@ -66,8 +66,8 @@ pip install "ragcheckup[all]"
 ragcheckup/
 ├── pyproject.toml
 ├── README.md
-├── LICENSE                     # Apache-2.0 (drafter's call)
-├── NOTICE                      # credits, incl. ChunkLint if any code is copied
+├── LICENSE                     # MIT (owner's decision)
+├── NOTICE                      # credits, incl. ChunkLint's MIT notice if any code is copied
 ├── docs/
 │   ├── PRD.md
 │   ├── TECHNICAL_DESIGN.md
