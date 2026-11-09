@@ -101,51 +101,64 @@ No tool covers all five failure modes, and none measures the exact-string blind 
 ## 7. The checks
 
 Each check has an ID, the failure mode it targets, what it needs, and its default
-severity. Severity levels: `high`, `medium`, `low`.
+severity. Severity levels: `high`, `medium`, `low`. The `scan` command reports five
+**scored groups**: tables, context, exact, versions, and index hygiene. Failure 5 is a
+separate command (`evalset`) and is not part of `scan` scoring.
 
 ### Failure 1 — Shredded tables
 
-| ID | What it flags | Needs |
-|---|---|---|
-| `table.flattened_numeric` | Chunks dominated by numeric tokens with few word tokens near them (rows of numbers with no labels), typical of flattened PDF tables | Text only |
-| `table.markdown_broken` | Markdown tables with inconsistent column counts, missing header separator, or header with no rows | Text only |
-| `table.header_orphan` | Header-like lines (short, title-cased tokens) with no data following in the same chunk | Text only |
+| ID | What it flags | Needs | Default severity |
+|---|---|---|---|
+| `table.flattened_numeric` | Chunks dominated by numeric tokens with few word tokens near them (rows of numbers with no labels), typical of flattened PDF tables | Text only | high |
+| `table.markdown_broken` | Markdown tables with inconsistent column counts, missing header separator, or header with no rows | Text only | high |
+| `table.header_orphan` | Header-like lines (short, title-cased tokens) with no data following in the same chunk | Text only | medium |
 
 ### Failure 2 — Lost context
 
-| ID | What it flags | Needs |
-|---|---|---|
-| `context.missing_heading` | No title/heading/section in metadata **and** none in the first lines of text | Text + metadata |
-| `context.dangling_reference` | Chunk opens with a reference to something not in the chunk ("This", "It", "These", "The above", "As mentioned") | Text only |
-| `context.starts_mid_sentence` | Chunk begins with a lowercase word or a connector ("and", "but", "which") | Text only |
-| `context.ends_mid_sentence` | Chunk ends without terminal punctuation where the next chunk of the same source continues the sentence | Text + ordering |
-| `context.size_outlier` | Chunks far below or above the index's own size distribution (relative, not fixed thresholds) | Text only |
+| ID | What it flags | Needs | Default severity |
+|---|---|---|---|
+| `context.missing_heading` | No title/heading/section in metadata **and** none in the first lines of text | Text + metadata | medium |
+| `context.dangling_reference` | Chunk opens with a reference to something not in the chunk ("This", "It", "These", "The above", "As mentioned") | Text only | medium |
+| `context.starts_mid_sentence` | Chunk begins with a lowercase word or a connector ("and", "but", "which") | Text only | high |
+| `context.ends_mid_sentence` | Chunk ends without terminal punctuation; raised to high when the next chunk of the same source confirms the split | Text + ordering | medium (high when confirmed) |
+| `context.size_outlier` | Chunks far below or above the index's own size distribution (relative, not fixed thresholds) | Text only | low |
 
 ### Failure 3 — Exact-string blind spot (launch headline)
 
-| ID | What it flags | Needs |
-|---|---|---|
-| `exact.vector_miss_rate` | Extracts identifiers from the corpus itself (error codes, SKUs, ticket IDs, version strings, capitalized names), queries the index with each, and measures how often the chunk containing it is **not** in the top-k vector results, compared with a keyword (BM25) baseline | Embeddings for queries (see section 9) |
+| ID | What it flags | Needs | Default severity |
+|---|---|---|---|
+| `exact.vector_miss_rate` | Extracts identifiers from the corpus itself (error codes, SKUs, ticket IDs, version strings, capitalized names), queries the index with each, and measures how often the chunk containing it is **not** in the top-k vector results, compared with a keyword (BM25) baseline | Embeddings for queries (see section 9) | high when vector misses exceed keyword misses by 30+ points; medium at 15+ |
 
-Output example: *"Vector search missed 62% of 214 exact-identifier lookups (keyword search
+Output always shows both raw miss rates; the gap between them drives severity and score.
+Example: *"Vector search missed 62% of 214 exact-identifier lookups (keyword search
 missed 4%). Your users' code and SKU searches will fail. Enable hybrid search."*
 
 ### Failure 4 — Version conflicts
 
-| ID | What it flags | Needs |
-|---|---|---|
-| `version.near_duplicate` | Near-identical chunks from **different** sources or different dates | Text (+ stored vectors if available) |
-| `version.same_title_multiple_dates` | Same document title or source stem indexed with more than one version/date | Metadata |
-| `version.missing_freshness_metadata` | Chunks with no version, last-updated or date metadata, reported as a share of the index | Metadata |
-| `hygiene.exact_duplicate` | Byte-identical chunk text appearing more than once | Text only |
-| `hygiene.missing_id_or_source` | Chunks with no stable ID or no source reference | Metadata |
-| `hygiene.empty_or_noise` | Empty chunks and PDF extraction noise (page headers/footers repeated across many chunks, excessive line breaks) | Text only |
+| ID | What it flags | Needs | Default severity |
+|---|---|---|---|
+| `version.near_duplicate` | Near-identical chunks from **different** sources or different dates | Text (+ stored vectors if available) | medium |
+| `version.same_title_multiple_dates` | Same document title or source stem indexed with more than one version/date | Metadata | medium (high when the versions also share near-duplicate chunks) |
+| `version.missing_freshness_metadata` | Chunks with no version, last-updated or date metadata, reported as a share of the index | Metadata | low |
+
+### Index hygiene (supports all failure modes)
+
+| ID | What it flags | Needs | Default severity |
+|---|---|---|---|
+| `hygiene.exact_duplicate` | Byte-identical chunk text appearing more than once | Text only | medium |
+| `hygiene.missing_id_or_source` | Chunks with no stable ID or no source reference | Metadata | medium |
+| `hygiene.empty_or_noise` | Empty chunks and PDF extraction noise (page headers/footers repeated across many chunks, excessive line breaks) | Text only | high for empty, low for noise |
+
+**High-severity checks** (subject to the quality targets in section 12):
+`table.flattened_numeric`, `table.markdown_broken`, `context.starts_mid_sentence`,
+`context.ends_mid_sentence` (confirmed splits), `version.same_title_multiple_dates`
+(with shared chunks), `hygiene.empty_or_noise` (empty), `exact.vector_miss_rate`.
 
 ### Failure 5 — No evaluation set
 
 | ID | What it does | Needs |
 |---|---|---|
-| `evalset.generate` (command, not a lint check) | Generates a starter set of questions from a sample of chunks, runs retrieval hit@k for each, and exports the set for ragas and deepeval | An LLM (opt-in) and embeddings |
+| `evalset` (separate command, produces no findings) | Generates a starter set of questions from a sample of chunks, runs retrieval hit@k for each, and exports the set for ragas and deepeval | An LLM (opt-in) and embeddings |
 
 ## 8. Inputs
 
@@ -215,7 +228,7 @@ license.
 **Quality (gates for each release):**
 
 - Every check has precision and recall measured on the labeled corpus, published in the
-  README.
+  README. Measurement rules are in the technical design, section 14.
 - v1 target: precision at least 0.9 and recall at least 0.8 for each high-severity check
   on the corpus; at most 5% of chunks in the clean control set flagged at any severity.
 
@@ -237,7 +250,7 @@ license.
 | **M1 — Core engine + baseline checks** | Loader for JSON/JSONL, check framework, failures 2 and hygiene checks, terminal + JSON report, config file, exit codes | All planted context problems flagged; clean set under 5% flagged |
 | **M2 — Tables and versions** | Failure 1 and 4 checks | Targets in section 12 met for these checks |
 | **M3 — Chroma connector** | Read-only scan of a live Chroma collection | Same findings from Chroma as from the JSONL export of the same corpus |
-| **M4 — Exact-string check** | `exact.vector_miss_rate` with BM25 baseline | Reproducible miss-rate numbers on the corpus; launch demo recorded |
+| **M4 — Exact-string check** | `exact.vector_miss_rate` with BM25 baseline | On the naive corpus index (built with the pinned corpus embedding model), the check extracts at least 90% of the planted identifiers, reports a vector-minus-keyword gap of at least 15 points, and gives identical numbers on two runs with the same seed; launch demo recorded |
 | **M5 — Report + launch** | HTML report, README with GIF, docs site pages on Systems in Prod, PyPI release 0.1.0 | Fresh install to first report under five minutes on a clean machine |
 | **M6 — Eval set** | `evalset` command with ragas and deepeval export | Exported files load in the current ragas and deepeval versions |
 | **Later** | Qdrant, pgvector, Parquet, LangChain/LlamaIndex adapters, fix suggestions | |
@@ -263,7 +276,11 @@ documentation and word lists are not copied verbatim.
 
 ## 16. Decisions made by the drafter (for the owner to confirm)
 
-- Name `ragcheckup` — free on PyPI and GitHub as of 2026-11-08.
+- Name `ragcheckup` — free on PyPI and GitHub as of 2026-11-08. PyPI has no reservation;
+  the name is only secured by publishing, so a placeholder 0.0.1 release early in M1 is
+  recommended.
+- Simplicity over speed in 0.1.0: single process, readable code first.
+- Corpus embedding model: `sentence-transformers/all-MiniLM-L6-v2`, pinned.
 - Python, distributed on PyPI, installed with `pipx`.
 - Chroma as the first live connector, because it runs locally with no server.
 - License: Apache-2.0 (patent grant, common for infrastructure tools). MIT is the

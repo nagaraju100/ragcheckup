@@ -145,7 +145,7 @@ class Finding(BaseModel):
 
 class CheckResult(BaseModel):
     check_id: str
-    failure_mode: Literal["tables", "context", "exact", "versions", "evalset", "hygiene"]
+    failure_mode: Literal["tables", "context", "exact", "versions", "hygiene"]  # evalset is a separate command, never in scan results
     status: Literal["ran", "skipped", "error"]
     skipped_reason: str | None
     findings: list[Finding]
@@ -203,13 +203,17 @@ in pages of 1,000 to bound memory. `native_retriever()` uses `collection.query(q
 `stored_embedder()` returns the collection's configured embedding function when Chroma
 persists it (newer Chroma versions record the embedding function configuration on the
 collection); the builder must verify the exact API on the Chroma version pinned at build
-time. If no embedding function is discoverable, return `None`.
+time. If no embedding function is discoverable, return `None`; the exact-string check then
+requires `--embed-model`. The corpus demo collections are created with an explicit
+embedding function so that discovery works in the demo, and the README demo command also
+passes `--embed-model` so it works regardless of Chroma version.
 
 **Read-only guarantee.** Connectors only call read methods. An integration test wraps the
 client and fails on any write call.
 
-**Scale target for v1:** 100,000 chunks on a laptop with 16 GB RAM in under 2 minutes
-for the structural checks (no embeddings).
+**Scale target for v1:** 100,000 chunks on a laptop with 16 GB RAM in under 5 minutes
+for the structural checks (no embeddings), single process. Simplicity wins over speed in
+0.1.0 because the owner must be able to read every line **(drafter's call)**.
 
 ## 7. Checks
 
@@ -221,7 +225,7 @@ for the structural checks (no embeddings).
 def dangling_reference(chunk: Chunk, ctx: CheckContext) -> Iterable[Finding]: ...
 ```
 
-- **chunk** scope: called per chunk; embarrassingly parallel.
+- **chunk** scope: called per chunk (run sequentially in 0.1.0).
 - **corpus** scope: receives the whole `ChunkSet` (duplicates, versions, size outliers).
 - **retrieval** scope: receives `ChunkSet` plus a `RetrievalContext` (BM25 index, vector
   retriever). Skipped with a reason if requirements are missing.
@@ -349,7 +353,12 @@ Each failure mode gets a 0–100 score, mainly to make the summary scannable:
   `100 × (1 − weighted_affected_share)` where affected chunks are weighted by severity
   (high 1.0, medium 0.5, low 0.1), with a floor of 0.
 - Exact mode: `100 − max(0, vector_miss_rate − bm25_miss_rate)` in percentage points.
+  The terminal and HTML summaries always print both raw miss rates next to the score;
+  the raw vector miss rate is the headline number in messages, the gap drives score and
+  severity.
 - Modes whose checks were skipped show "not run", never 100.
+- There are exactly five scored groups: tables, context, exact, versions, hygiene. The
+  `evalset` command is not scored.
 
 Scores are secondary. The findings list is the product.
 
@@ -408,7 +417,8 @@ usage or configuration error; `3` source could not be read.
 
 ## 12. Performance
 
-- Chunk-scope checks run in a process pool when chunk count exceeds 20,000.
+- Single process in 0.1.0. A process pool for chunk-scope checks is a later optimization
+  if the 5-minute target is missed.
 - Corpus stats computed once and shared.
 - MinHash keeps near-duplicate detection roughly linear.
 - Retrieval checks are bounded by `--sample` (default 300 queries).
@@ -430,7 +440,9 @@ implement.
 | Optional | Exact-string and evalset tests run with a tiny local sentence-transformers model, marked `@pytest.mark.slow`; LLM calls mocked in normal runs. | |
 
 CI (GitHub Actions): `ruff`, `mypy`, unit + integration tests on Python 3.10–3.13, the
-benchmark gate, and a build of the wheel. Slow tests run nightly.
+benchmark gate for structural checks (no model needed), and a build of the wheel. Slow
+tests, including the exact-string benchmark gate, run nightly with the pinned corpus
+embedding model cached.
 
 ## 14. The planted corpus (M0) in detail
 
@@ -449,6 +461,41 @@ benchmark gate, and a build of the wheel. Slow tests run nightly.
   the naive index fails loudly, the good index is mostly clean.
 - **`corpus/README.md`** explains each planted problem in plain language. It doubles as the
   owner's RAG tutorial.
+
+**Pinned corpus embedding model.** Both Chroma collections are built with
+`sentence-transformers/all-MiniLM-L6-v2` (Apache-2.0, small, CPU-friendly) at a pinned
+version **(drafter's call)**. The same model is used by the exact-string tests.
+
+**Label format.** Labels are tied to **text spans in the source documents**, not to chunk
+IDs, so they survive both splitters:
+
+```yaml
+- id: L014
+  doc: docs/returns-policy-2023.md
+  anchor: "Q3 refund rate"        # verbatim string that appears in the problem region
+  check: table.flattened_numeric
+  applies_to: [naive]             # which index(es) should exhibit it
+- id: L031
+  doc: docs/error-codes.md
+  identifier: ERR-4012            # planted identifiers for the exact-string check
+  check: exact.vector_miss_rate
+```
+
+**Precision and recall rules** (`benchmarks/run.py`):
+
+- Unit of measurement is the **planted problem** (one label).
+- A label is *found* when at least one finding from its check ID references a chunk whose
+  text contains the anchor (for corpus-level findings with several chunk IDs, any of them).
+- **Recall** per check = found labels / labels for that check, measured on the index(es)
+  in `applies_to` (the naive index for most).
+- **Precision** per check = findings that match some label / all findings from that check,
+  measured on the naive index.
+- **False-positive rate** = share of chunks from clean-control documents flagged at any
+  severity, measured on **both** indexes, target at most 5%.
+- For `exact.vector_miss_rate`, the gated numbers are identifier extraction recall
+  (planted identifiers found by extraction, target at least 0.9) and the reported gap on
+  the naive index (target at least 15 points). This runs in the nightly slow job and in
+  local runs, because it needs the embedding model.
 
 ## 15. Security and privacy
 
