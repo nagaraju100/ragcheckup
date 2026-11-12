@@ -1,0 +1,7 @@
+Our CEO and co-founder is Dr. Priya Sharma. She holds a PhD in Machine Learning from Stanford University and spent 8 years at Google Brain working on natural language processing systems.
+
+The CTO is Arjun Menon, a former principal engineer at AWS who led the building of distributed ML pipelines for Alexa.
+
+Sarah Chen serves as VP of Engineering. Before NexusAI, she was the engineering lead at Zomato, where she scaled their recommendation engine to serve 50 million daily active users.
+
+Our Head of Data Science is Rajesh Iyer, who previously built fraud detection systems at Paytm serving 400 million users.
