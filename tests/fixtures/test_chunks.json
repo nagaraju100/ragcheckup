@@ -1,0 +1,52 @@
+[
+  {
+    "id": "doc1-chunk1",
+    "text": "Return Policy 2025\n\nAll returns must be processed within 30 days of purchase. Items must be in original packaging.\n\nRefund processing times vary by payment method.",
+    "metadata": {"source": "returns-policy-2025.md", "title": "Return Policy 2025", "updated": "2025-01-15"}
+  },
+  {
+    "id": "doc1-chunk2",
+    "text": "this policy does not apply to items purchased during the holiday sale period. Exceptions may apply for defective products.",
+    "metadata": {"source": "returns-policy-2025.md", "title": "Return Policy 2025"}
+  },
+  {
+    "id": "doc1-chunk3",
+    "text": "and this is a continuation of the previous policy clause.",
+    "metadata": {"source": "returns-policy-2025.md"}
+  },
+  {
+    "id": "doc2-chunk1",
+    "text": "SKU: ABC-12345\nSKU: XYZ-67890\nSKU: DEF-11111\nERR-4012\nERR-5003\nE1043\nTICK-001\nTICK-002\nTicket #12345\nTicket #67890\nv2.1.3\nv3.0.0\n401\n500\nstatus 500 error",
+    "metadata": {"source": "error-codes.md"}
+  },
+  {
+    "id": "doc3-chunk1",
+    "text": "",
+    "metadata": {"source": "empty-doc.md"}
+  },
+  {
+    "id": "doc4-chunk1",
+    "text": "123 456 789 321 654 987 147 258 369 753 864 951 111 222 333 444 555 666 777 888 999 121 312 413 514 615 716 817 918 919",
+    "metadata": {"source": "flattened-table.md"}
+  },
+  {
+    "id": "doc5-chunk1",
+    "text": "# Return Policy\nAll returns must be within 30 days.",
+    "metadata": {"source": "returns-policy-2023.md", "title": "Return Policy 2023", "updated": "2023-06-01"}
+  },
+  {
+    "id": "doc5-chunk2",
+    "text": "# Return Policy\nAll returns must be within 45 days.",
+    "metadata": {"source": "returns-policy-2025.md", "title": "Return Policy 2025", "updated": "2025-01-15"}
+  },
+  {
+    "id": "doc6-chunk1",
+    "text": "This limit is enforced by the system automatically.\nAs mentioned in the previous section, exceptions require manager approval.",
+    "metadata": {"source": "admin-guide.md"}
+  },
+  {
+    "id": "doc7-chunk1",
+    "text": "   \n\n   \n",
+    "metadata": {"source": "noise-doc.md"}
+  }
+]
