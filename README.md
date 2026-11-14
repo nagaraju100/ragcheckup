@@ -18,7 +18,10 @@ and basic index hygiene. Every finding points at specific chunk IDs and links to
 pip install .
 
 # Scan a JSON/JSONL chunk export
-ragcheckup scan chunks.jsonl
+ragcheckup scan corpus/chunks_naive.jsonl
+
+# Scan the "good" index (mostly clean) for comparison
+ragcheckup scan corpus/chunks_good.jsonl
 
 # Scan a live Chroma collection (requires chroma extra)
 pip install "ragcheckup[chroma]"
