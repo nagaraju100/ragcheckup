@@ -26,6 +26,7 @@ from ragcheckup.checks import context  # noqa: F401
 from ragcheckup.checks import hygiene  # noqa: F401
 from ragcheckup.checks import tables  # noqa: F401
 from ragcheckup.checks import versions  # noqa: F401
+from ragcheckup.checks import exact  # noqa: F401
 from ragcheckup.retrieval.bm25 import BM25Retriever
 from ragcheckup.retrieval.base import NullRetriever
 from ragcheckup.normalize import normalize_metadata
@@ -189,7 +190,16 @@ class Engine:
                     )
 
                 elif scope == "corpus":
-                    findings = fn(self._chunks, ctx)
+                    # Check if this is the exact-string check that needs BM25
+                    if check_id == "exact.vector_miss_rate":
+                        from ragcheckup.checks.exact import run_exact_check
+                        findings = run_exact_check(
+                            self._chunks, ctx,
+                            bm25_retriever=self._bm25,
+                            k=self.k, sample=self.sample,
+                        )
+                    else:
+                        findings = fn(self._chunks, ctx)
                     result = CheckResult(
                         check_id=check_id,
                         failure_mode=failure_mode,

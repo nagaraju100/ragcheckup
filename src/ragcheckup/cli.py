@@ -35,9 +35,12 @@ console = Console()
 @app.command()
 def scan(
     source: str = typer.Argument(..., help="Source to scan: path to JSON/JSONL, or chroma URI."),
-    format: str = typer.Option("terminal", "--format", help="Output format: terminal, json."),
+    format: str = typer.Option("terminal", "--format", help="Output format: terminal, json, html."),
     output: str | None = typer.Option(None, "--output", "-o", help="Write report to file."),
     fail_on: str = typer.Option("never", "--fail-on", help="Exit with code 1 if findings at or above this severity."),
+    config: str | None = typer.Option(None, "--config", "-c", help="Path to config YAML file."),
+    checks: str | None = typer.Option(None, "--checks", help="Only run these check IDs (comma-separated)."),
+    skip: str | None = typer.Option(None, "--skip", help="Skip these check IDs (comma-separated)."),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show all findings, not just top 10."),
     k: int = typer.Option(5, "--k", help="Number of top results for retrieval checks."),
     seed: int = typer.Option(42, "--seed", help="Random seed for reproducible sampling."),
@@ -52,6 +55,11 @@ def scan(
         console.print(f"ragcheckup {__version__}")
         return
 
+    # Load config file (CLI args override config)
+    from ragcheckup.config import load_config, merge_cli_config
+    config = load_config(config)
+    fail_on, checked_ids, skipped_ids = merge_cli_config(fail_on, checks, skip, config)
+
     try:
         engine = Engine(
             source=source,
@@ -60,6 +68,8 @@ def scan(
             seed=seed,
             fail_on=fail_on,
         )
+        # Wire config into engine for chunk filtering
+        engine._config = config
         report = engine.run()
     except FileNotFoundError:
         console.print(f"[red]Error: Source not found: {source}[/red]")
@@ -69,7 +79,11 @@ def scan(
         sys.exit(2)
 
     if format == "json":
-        _write_json_report(report, output)
+        from ragcheckup.reporters.jsonreport import write_json_report
+        write_json_report(report, output)
+    elif format == "html":
+        from ragcheckup.reporters.htmlreport import write_html_report
+        write_html_report(report, output)
     else:
         _print_terminal_report(report, verbose)
 
@@ -215,13 +229,16 @@ def _top_findings(report, n: int = 10) -> list:
 
 def _write_json_report(report, output: str | None) -> None:
     """Write the report as JSON."""
-    json_str = report.model_dump_json(indent=2)
+    json_str = report.model_dump_json(indent=2, exclude_none=True)
 
     if output:
         Path(output).write_text(json_str, encoding="utf-8")
         console.print(f"[green]Report written to {output}[/green]")
     else:
-        console.print(json_str)
+        # Filter out None values for cleaner output
+        import json as _json
+        parsed = _json.loads(json_str)
+        console.print(_json.dumps(parsed, indent=2, default=str))
 
 
 # ---------------------------------------------------------------------------

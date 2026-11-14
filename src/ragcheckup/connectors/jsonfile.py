@@ -73,3 +73,27 @@ class JsonFileConnector(Connector):
             title=title,
             position=position,
         )
+
+    def _chunk_to_chunk(self, item: dict[str, Any]) -> Chunk:
+        """Convert a corpus-built JSONL chunk (source in metadata) to a Chunk."""
+        metadata = item.get("metadata", {})
+        metadata = normalize_metadata(metadata)
+
+        text = item.get("text") or item.get("page_content") or item.get("content") or ""
+
+        chunk_id = item.get("id") or metadata.get("id") or f"row-{id(item)}"
+        source = item.get("source") or metadata.get("source")
+        title = item.get("title") or metadata.get("title")
+        position = item.get("position") or metadata.get("position")
+
+        if not chunk_id or chunk_id == "":
+            chunk_id = f"row-{id(item)}"
+
+        return Chunk(
+            id=str(chunk_id),
+            text=text,
+            metadata=metadata,
+            source=source,
+            title=title,
+            position=position,
+        )
