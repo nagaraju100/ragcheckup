@@ -90,11 +90,6 @@ ragcheckup scan chunks.jsonl --fail-on high --format json --output report.json
 - [**All 15 checks — complete reference table**](docs/CHECKS_REFERENCE.md) — what each check does, scope, severity, and why it matters
 - [Planted test corpus](corpus/README.md) — 35 documents with problems planted on purpose
 
-## Acknowledgements
-
-The baseline structural checks are inspired by
-[ChunkLint](https://github.com/prabhath004/chunkLint) (MIT).
-
 ## License
 
 [MIT](LICENSE)
