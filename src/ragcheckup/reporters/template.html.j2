@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title>
+<style>
+  :root {
+    --bg: #0f172a; --surface: #1e293b; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8;
+    --high: #ef4444; --medium: #f59e0b; --low: #3b82f6;
+    --good: #22c55e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+    margin: 0; padding: 2rem 1rem;
+    line-height: 1.6;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--muted); }
+  .meta { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .meta span { margin-right: 1.5rem; }
+
+  /* Score cards */
+  .score-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem; margin-bottom: 2rem;
+  }
+  .score-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem; text-align: center;
+  }
+  .score-card .label { font-size: 0.8rem; text-transform: uppercase; color: var(--muted); }
+  .score-card .value { font-size: 2rem; font-weight: 700; }
+  .score-card .sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+  .score-high { color: var(--good); }
+  .score-mid { color: var(--medium); }
+  .score-low { color: var(--high); }
+
+  /* Findings */
+  .finding {
+    background: var(--surface); border-left: 4px solid var(--border);
+    border-radius: 0 8px 8px 0; padding: 0.75rem 1rem; margin-bottom: 0.75rem;
+  }
+  .finding.high { border-left-color: var(--high); }
+  .finding.medium { border-left-color: var(--medium); }
+  .finding.low { border-left-color: var(--low); }
+  .finding .badge {
+    display: inline-block; font-size: 0.7rem; font-weight: 600;
+    padding: 0.15rem 0.5rem; border-radius: 4px; text-transform: uppercase;
+  }
+  .badge.high { background: var(--high); color: #fff; }
+  .badge.medium { background: var(--medium); color: #000; }
+  .badge.low { background: var(--low); color: #fff; }
+  .finding .msg { margin: 0.4rem 0 0; font-size: 0.9rem; }
+  .finding .chunks { font-size: 0.8rem; color: var(--muted); margin-top: 0.3rem; }
+  .finding .evidence {
+    font-size: 0.78rem; color: var(--muted); background: var(--bg);
+    padding: 0.4rem 0.6rem; border-radius: 4px; margin-top: 0.4rem;
+    font-family: monospace; word-break: break-all;
+  }
+
+  /* Filter buttons */
+  .filters { margin-bottom: 1rem; }
+  .filters button {
+    background: var(--surface); color: var(--text); border: 1px solid var(--border);
+    padding: 0.35rem 0.8rem; border-radius: 6px; cursor: pointer;
+    margin-right: 0.5rem; font-size: 0.8rem;
+  }
+  .filters button.active { background: var(--border); }
+
+  /* Expand evidence */
+  .evidence-toggle {
+    background: none; border: none; color: var(--medium);
+    cursor: pointer; font-size: 0.75rem; padding: 0;
+  }
+  .evidence-toggle:hover { text-decoration: underline; }
+  .evidence-hidden { display: none; }
+
+  /* Skip/Not run */
+  .skipped { opacity: 0.5; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>{{ title }}</h1>
+  <div class="meta">
+    <span>Source: {{ origin }}</span>
+    <span>{{ chunk_count }} chunks</span>
+    <span>{{ duration_ms }}ms</span>
+    <span>Version: {{ tool_version }}</span>
+    <span>Started: {{ started_at }}</span>
+  </div>
+
+  <h2>Failure Mode Scores (0–100)</h2>
+  <div class="score-grid">
+    {% for mode in ["tables","context","exact","versions","hygiene"] %}
+      {% set score = score_by_failure_mode.get(mode, 0) %}
+      {% set cls = "score-high" if score >= 70 else ("score-mid" if score >= 40 else "score-low") %}
+      <div class="score-card">
+        <div class="label">{{ mode }}</div>
+        <div class="value {{ cls }}">{{ score }}</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <h2>Findings</h2>
+  <div class="filters">
+    <button class="active" onclick="filterFindings('all')">All</button>
+    <button onclick="filterFindings('high')">High</button>
+    <button onclick="filterFindings('medium')">Medium</button>
+    <button onclick="filterFindings('low')">Low</button>
+    <button onclick="filterFindings('tables')">Tables</button>
+    <button onclick="filterFindings('context')">Context</button>
+    <button onclick="filterFindings('versions')">Versions</button>
+    <button onclick="filterFindings('hygiene')">Hygiene</button>
+  </div>
+
+  <div id="findings-container"></div>
+</div>
+
+<script>
+const findings = {{ findings_json | safe }};
+const results = JSON.parse("{{ results_json | safe }}");
+
+function renderFindings(filtered) {
+  const container = document.getElementById("findings-container");
+  if (filtered.length === 0) {
+    container.innerHTML = "<p>No findings match this filter.</p>";
+    return;
+  }
+  let html = "<div>";
+  let currentMode = "";
+  for (const f of filtered) {
+    if (f.check_id !== currentMode) {
+      currentMode = f.check_id;
+      const mode = f.check_id.split(".")[0];
+      html += `<h3 style="color:var(--muted);font-size:0.9rem;margin:1rem 0 0.5rem;">${mode.toUpperCase()} — ${f.check_id}</h3>`;
+    }
+    const chunkStr = f.chunk_ids.length
+      ? f.chunk_ids.slice(0, 5).join(", ") + (f.chunk_ids.length > 5 ? "…" : "")
+      : "(corpus-level)";
+    const evStr = f.evidence ? JSON.stringify(f.evidence).substring(0, 300) : "";
+    html += `<div class="finding ${f.severity}" data-mode="${f.check_id.split('.')[0]}" data-severity="${f.severity}">
+      <span class="badge ${f.severity}">${f.severity}</span>
+      <p class="msg">${f.message}</p>
+      <p class="chunks">Chunks: ${chunkStr}</p>
+      ${evStr ? `<button class="evidence-toggle" onclick="toggleEvidence(this)">Show evidence ▼</button><div class="evidence evidence-hidden">${evStr}</div>` : ""}
+    </div>`;
+  }
+  html += "</div>";
+  container.innerHTML = html;
+}
+
+function filterFindings(filter) {
+  const btns = document.querySelectorAll(".filters button");
+  btns.forEach(b => b.classList.toggle("active", b.textContent.toLowerCase() === filter || (filter === "all" && b.textContent === "All")));
+  const filtered = filter === "all"
+    ? findings
+    : findings.filter(f => f.severity === filter || f.check_id.startsWith(filter + "."));
+  renderFindings(filtered);
+}
+
+function toggleEvidence(btn) {
+  const ev = btn.nextElementSibling;
+  const hidden = ev.classList.toggle("evidence-hidden");
+  btn.textContent = hidden ? "Show evidence ▼" : "Hide evidence ▲";
+}
+
+renderFindings(findings);
+</script>
+</body>
+</html>

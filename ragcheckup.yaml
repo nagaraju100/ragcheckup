@@ -1,0 +1,38 @@
+# ragcheckup configuration file.
+#
+# Usage:  ragcheckup scan chunks.jsonl --config ragcheckup.yaml
+# Or just place this file in your project root and it's picked up automatically.
+
+version: 1
+
+# Gate the CI: exit 1 if any high or medium findings are found.
+fail_on: never
+
+# Map metadata keys that different documents use for the same concept.
+# ragcheckup uses these to extract titles, dates, and other metadata.
+metadata_keys:
+  title: [title, heading, section]
+  updated: [updated_at, effective_date, last_modified]
+
+# Per-check overrides — change severity or tuning parameters.
+checks:
+  context.dangling_reference:
+    severity: low
+  table.flattened_numeric:
+    numeric_ratio: 0.45
+
+# Exact-string check tuning (BM25 + vector comparison).
+exact.vector_miss_rate:
+  k: 5
+  sample: 300
+
+# Disable checks you don't care about (by check ID).
+disable:
+  - context.size_outlier
+
+# Ignore specific chunks or entire source files.
+ignore:
+  chunk_ids:
+    - faq-001
+  sources:
+    - "legacy/*"

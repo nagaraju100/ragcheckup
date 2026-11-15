@@ -1,0 +1,270 @@
+# Ground-truth labels for the Northwind Gear planted test corpus.
+# Each label describes a planted problem that a ragcheckup check should detect.
+# Anchors are verbatim strings appearing in the problem region.
+# applies_to: which index (naive vs good) should exhibit the problem.
+
+# ===================================================================
+# TABLES — Failure 1
+# ===================================================================
+
+- id: L001
+  doc: docs/returns-policy-2023.md
+  anchor: "Q3 refund rate"
+  check: table.flattened_numeric
+  applies_to: [naive]
+
+- id: L002
+  doc: docs/travel-policy.md
+  anchor: "Per Diem Allowances"
+  check: table.flattened_numeric
+  applies_to: [naive]
+
+- id: L003
+  doc: docs/expense-reimbursement.md
+  anchor: "Meals & Entertainment"
+  check: table.flattened_numeric
+  applies_to: [naive]
+
+- id: L004
+  doc: docs/product-tents.md
+  anchor: "Replacement Parts"
+  check: table.markdown_broken
+  applies_to: [naive]
+
+- id: L005
+  doc: docs/product-backpacks.md
+  anchor: "Accessories"
+  check: table.markdown_broken
+  applies_to: [naive]
+
+- id: L006
+  doc: docs/product-tents.md
+  anchor: "Key features"
+  check: table.header_orphan
+  applies_to: [naive, good]
+
+- id: L007
+  doc: docs/product-stoves.md
+  anchor: "Key features"
+  check: table.header_orphan
+  applies_to: [naive, good]
+
+# ===================================================================
+# CONTEXT — Failure 2
+# ===================================================================
+
+- id: L010
+  doc: docs/it-security-policy.md
+  anchor: "Access Control"
+  check: context.missing_heading
+  applies_to: [naive, good]
+
+- id: L011
+  doc: docs/it-security-policy.md
+  anchor: "Multi-Factor Authentication"
+  check: context.missing_heading
+  applies_to: [naive, good]
+
+- id: L012
+  doc: docs/it-security-policy.md
+  anchor: "Employee Offboarding"
+  check: context.missing_heading
+  applies_to: [naive, good]
+
+- id: L013
+  doc: docs/product-clothing.md
+  anchor: "Outerwear"
+  check: context.missing_heading
+  applies_to: [naive, good]
+
+- id: L014
+  doc: docs/remote-work-policy.md
+  anchor: "this policy"
+  check: context.dangling_reference
+  applies_to: [naive, good]
+
+- id: L015
+  doc: docs/faq.md
+  anchor: "Northwind Gear's return"
+  check: context.dangling_reference
+  applies_to: [naive, good]
+
+- id: L016
+  doc: docs/emergency-procedures.md
+  anchor: "its"
+  check: context.dangling_reference
+  applies_to: [naive]
+
+- id: L017
+  doc: docs/remote-work-policy.md
+  anchor: "Remote employees are expected"
+  check: context.starts_mid_sentence
+  applies_to: [naive]
+
+- id: L018
+  doc: docs/troubleshooting-tents.md
+  anchor: "Pole clips won't snap"
+  check: context.starts_mid_sentence
+  applies_to: [naive]
+
+- id: L019
+  doc: docs/faq.md
+  anchor: "Which tent is best"
+  check: context.dangling_reference
+  applies_to: [naive, good]
+
+# ===================================================================
+# EXACT-STRING — Failure 3 (identifier extraction targets)
+# ===================================================================
+
+- id: L020
+  doc: docs/product-tents.md
+  identifier: "NW-TR-2A"
+  check: exact.vector_miss_rate
+  applies_to: [naive]
+
+- id: L021
+  doc: docs/product-tents.md
+  identifier: "NW-TR-4B"
+  check: exact.vector_miss_rate
+  applies_to: [naive]
+
+- id: L022
+  doc: docs/product-stoves.md
+  identifier: "NW-ST-CS1"
+  check: exact.vector_miss_rate
+  applies_to: [naive]
+
+- id: L023
+  doc: docs/product-stoves.md
+  identifier: "NW-ST-LF1"
+  check: exact.vector_miss_rate
+  applies_to: [naive]
+
+- id: L024
+  doc: docs/troubleshooting-stoves.md
+  identifier: "ERR-FL-01"
+  check: exact.vector_miss_rate
+  applies_to: [naive]
+
+- id: L025
+  doc: docs/troubleshooting-stoves.md
+  identifier: "ERR-FL-03"
+  check: exact.vector_miss_rate
+  applies_to: [naive]
+
+- id: L026
+  doc: docs/troubleshooting-stoves.md
+  identifier: "ERR-IGN-01"
+  check: exact.vector_miss_rate
+  applies_to: [naive]
+
+- id: L027
+  doc: docs/support-runbook-1.md
+  identifier: "ERR-SHP-001"
+  check: exact.vector_miss_rate
+  applies_to: [naive]
+
+- id: L028
+  doc: docs/support-runbook-1.md
+  identifier: "NW-ST-IGN"
+  check: exact.vector_miss_rate
+  applies_to: [naive]
+
+- id: L029
+  doc: docs/product-accessories.md
+  identifier: "NW-AC-HL1"
+  check: exact.vector_miss_rate
+  applies_to: [naive]
+
+# ===================================================================
+# VERSIONS — Failure 4
+# ===================================================================
+
+- id: L030
+  doc: docs/returns-policy-2023.md
+  anchor: "30 days"
+  check: version.near_duplicate
+  applies_to: [naive]
+
+- id: L031
+  doc: docs/returns-policy-2025.md
+  anchor: "45 days"
+  check: version.near_duplicate
+  applies_to: [naive]
+
+- id: L032
+  doc: docs/leave-policy-2023.md
+  anchor: "120 hours"
+  check: version.near_duplicate
+  applies_to: [naive]
+
+- id: L033
+  doc: docs/leave-policy-2025.md
+  anchor: "150 hours"
+  check: version.near_duplicate
+  applies_to: [naive]
+
+- id: L034
+  doc: docs/returns-policy-2023.md
+  anchor: "2023-01-15"
+  check: version.same_title_multiple_dates
+  applies_to: [naive]
+
+- id: L035
+  doc: docs/returns-policy-2025.md
+  anchor: "2025-03-01"
+  check: version.same_title_multiple_dates
+  applies_to: [naive]
+
+- id: L036
+  doc: docs/leave-policy-2023.md
+  anchor: "2023-02-01"
+  check: version.same_title_multiple_dates
+  applies_to: [naive]
+
+- id: L037
+  doc: docs/product-sale-2024.md
+  anchor: "2024"
+  check: version.same_title_multiple_dates
+  applies_to: [naive]
+
+- id: L038
+  doc: docs/product-sale-2025.md
+  anchor: "2025"
+  check: version.same_title_multiple_dates
+  applies_to: [naive]
+
+# ===================================================================
+# HYGIENE — Failure 5
+# ===================================================================
+
+- id: L040
+  doc: docs/shipping-guidelines.md
+  anchor: ""
+  check: hygiene.empty_or_noise
+  applies_to: [naive]
+
+- id: L041
+  doc: docs/it-security-policy.md
+  anchor: "Productivity Monitoring"
+  check: context.missing_heading
+  applies_to: [naive, good]
+
+- id: L042
+  doc: docs/support-runbook-1.md
+  identifier: "ERR-ACC-001"
+  check: exact.vector_miss_rate
+  applies_to: [naive]
+
+- id: L043
+  doc: docs/support-runbook-2.md
+  identifier: "ERR-PRD-002"
+  check: exact.vector_miss_rate
+  applies_to: [naive]
+
+- id: L044
+  doc: docs/support-runbook-1.md
+  identifier: "IT-SEC"
+  check: exact.vector_miss_rate
+  applies_to: [naive]

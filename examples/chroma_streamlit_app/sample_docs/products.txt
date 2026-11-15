@@ -1,0 +1,9 @@
+NexusAI offers three core products:
+
+First, InsightEngine — a no-code platform that lets business analysts build predictive models without writing any machine learning code. You upload your CSV, pick what you want to predict, and the platform does the rest.
+
+Second, DocuSight — an AI document analysis tool that reads contracts, extracts key clauses, and flags risks. It's used by over 60 law firms across India.
+
+Third, PatientVoice — an NLP system for healthcare that analyzes patient records, identifies at-risk patients, and predicts readmission probabilities. It's deployed in 15 hospitals across Karnataka.
+
+Our platform supports Python, R, and SQL workflows. We integrate with PostgreSQL, MongoDB, and Apache Kafka.
