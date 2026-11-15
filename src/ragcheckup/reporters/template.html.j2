@@ -124,7 +124,11 @@
 
 <script>
 const findings = {{ findings_json | safe }};
-const results = JSON.parse("{{ results_json | safe }}");
+const results = {{ results_json | safe }};
+
+function esc(v) {
+  return String(v).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+}
 
 function renderFindings(filtered) {
   const container = document.getElementById("findings-container");
@@ -138,15 +142,15 @@ function renderFindings(filtered) {
     if (f.check_id !== currentMode) {
       currentMode = f.check_id;
       const mode = f.check_id.split(".")[0];
-      html += `<h3 style="color:var(--muted);font-size:0.9rem;margin:1rem 0 0.5rem;">${mode.toUpperCase()} — ${f.check_id}</h3>`;
+      html += `<h3 style="color:var(--muted);font-size:0.9rem;margin:1rem 0 0.5rem;">${esc(mode.toUpperCase())} — ${esc(f.check_id)}</h3>`;
     }
     const chunkStr = f.chunk_ids.length
-      ? f.chunk_ids.slice(0, 5).join(", ") + (f.chunk_ids.length > 5 ? "…" : "")
+      ? f.chunk_ids.slice(0, 5).map(esc).join(", ") + (f.chunk_ids.length > 5 ? "…" : "")
       : "(corpus-level)";
-    const evStr = f.evidence ? JSON.stringify(f.evidence).substring(0, 300) : "";
-    html += `<div class="finding ${f.severity}" data-mode="${f.check_id.split('.')[0]}" data-severity="${f.severity}">
-      <span class="badge ${f.severity}">${f.severity}</span>
-      <p class="msg">${f.message}</p>
+    const evStr = f.evidence ? esc(JSON.stringify(f.evidence).substring(0, 300)) : "";
+    html += `<div class="finding ${esc(f.severity)}" data-mode="${esc(f.check_id.split('.')[0])}" data-severity="${esc(f.severity)}">
+      <span class="badge ${esc(f.severity)}">${esc(f.severity)}</span>
+      <p class="msg">${esc(f.message)}</p>
       <p class="chunks">Chunks: ${chunkStr}</p>
       ${evStr ? `<button class="evidence-toggle" onclick="toggleEvidence(this)">Show evidence ▼</button><div class="evidence evidence-hidden">${evStr}</div>` : ""}
     </div>`;

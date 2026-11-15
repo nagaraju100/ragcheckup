@@ -8,6 +8,22 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 
+def _js_json(obj: object) -> str:
+    """Serialize to JSON that is safe to embed inside a <script> block.
+
+    Escapes characters that could close the script element or start an HTML
+    comment, plus the JS line separators.
+    """
+    return (
+        json.dumps(obj, default=str)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+        .replace("\u2028", "\\u2028")
+        .replace("\u2029", "\\u2029")
+    )
+
+
 def write_html_report(report, output: str | None) -> None:
     """Generate a self-contained HTML report and write to file or stdout."""
     env = Environment(
@@ -37,7 +53,7 @@ def write_html_report(report, output: str | None) -> None:
         duration_ms=report.duration_ms,
         started_at=report.started_at.isoformat() if hasattr(report.started_at, 'isoformat') else str(report.started_at),
         score_by_failure_mode=report.score_by_failure_mode,
-        results_json=json.dumps([
+        results_json=_js_json([
             {
                 "check_id": r.check_id,
                 "failure_mode": r.failure_mode.value,
@@ -47,8 +63,8 @@ def write_html_report(report, output: str | None) -> None:
                 "summary": r.summary,
             }
             for r in report.results
-        ], default=str),
-        findings_json=json.dumps([
+        ]),
+        findings_json=_js_json([
             {
                 "check_id": f.check_id,
                 "severity": f.severity.value,
@@ -58,7 +74,7 @@ def write_html_report(report, output: str | None) -> None:
                 "fix_url": f.fix_url,
             }
             for _, f in all_findings
-        ], default=str),
+        ]),
     )
 
     if output:
